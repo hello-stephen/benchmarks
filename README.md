@@ -90,6 +90,10 @@ Our goal is to build `velodb.github.io/benchmarks` into the industry's most trus
      `DB_USER` / `PASSWORD`, then poll `brpc_metrics` until every disk's
      `file_cache_cache_size` drops to `CLEAR_FILE_CACHE_MAX_SIZE_GB` or less
      (default 0 GB), timeout `CLEAR_FILE_CACHE_TIMEOUT_MIN` minutes (default 60).
+     The Doris SF1000 TPCH, TPCDS, SSB and SSB-FLAT suites explicitly require
+     zero bytes when file-cache clearing is enabled. Their suite parameter takes
+     precedence over a workflow-provided residual-cache threshold; nonzero
+     residual cache must time out rather than be recorded as a cold run.
    - `CLEAR_SYS_PAGE_CACHE` — defaults to `CLEAR_SYS_PAGE_CACHE_METHOD=ssh`, which
      runs `sync; echo 3 | sudo tee /proc/sys/vm/drop_caches` as
      `CLEAR_CACHE_SSH_USER` (default `root`). For Yaochi clusters that expose cache

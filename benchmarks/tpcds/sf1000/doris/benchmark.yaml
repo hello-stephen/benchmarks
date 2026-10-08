@@ -13,6 +13,8 @@ engine:
 
 # test execution parameters
 parameters:
+  # Cold-cache runs must observe every BE disk at zero bytes, not a residual-cache tolerance.
+  clear_file_cache_max_size_gb: "0"
   load: "${LOAD:-false}" # Whether to run data loading phase
   query: "${QUERY:-false}" # Whether to run benchmark query
   session: "${SESSION:-false}" # Whether to run session setup phase
