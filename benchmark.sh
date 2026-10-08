@@ -335,7 +335,7 @@ run_session() {
     echo "Running set session."
     local session_content
     session_content=$(envsubst < "$session_file")
-    if ! engine_run_sql "" "$session_content"; then
+    if ! engine_run_sql "" "$session_content" false; then
         die "Setup session failed"
     fi
 }
@@ -616,7 +616,7 @@ run_timed_query() {
     local run_label="$3"
     local sql_content="$4"
 
-    RUN_QUERY_DURATION="9999"
+    RUN_QUERY_DURATION=""
     echo "Query run ${query_name} on ${run_label}"
 
     local start_time
@@ -637,7 +637,7 @@ run_timed_query() {
             fi
         fi
     else
-        echo "Query execution failed ${query_name} on ${run_label}" >&2
+        die "Query execution failed ${query_name} on ${run_label}"
     fi
 }
 

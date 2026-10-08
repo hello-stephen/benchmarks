@@ -288,6 +288,8 @@ engine_run_sql_file() {
 engine_run_sql() {
     local db="$1"
     local sql_statement="$2"
+    local apply_session="${3:-true}"
+    local session_content
     local error_file=""
     local sql_file=""
     local status=0
@@ -315,7 +317,17 @@ engine_run_sql() {
         rm -f "$error_file"
         return 1
     }
-    printf '%s\n' "$sql_statement" > "$sql_file"
+    # Each mysql invocation is a new connection. Apply the configured session
+    # here so SET statements also affect the query whose duration is measured.
+    if ! session_content="$(engine_get_session_sql_content "$apply_session")"; then
+        echo "ERROR: Failed to prepare session SQL" >&2
+        rm -f "$error_file" "$sql_file"
+        return 1
+    fi
+    {
+        [ -z "$session_content" ] || printf '%s\n;\n' "$session_content"
+        printf '%s\n' "$sql_statement"
+    } > "$sql_file"
     local sql_tail="$sql_statement"
     while :; do
         case "$sql_tail" in
