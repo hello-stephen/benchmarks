@@ -89,6 +89,23 @@ printf 'effective_threshold=%s\\n' "$clear_file_cache_max_size_gb"
                 self.assertIn('effective_threshold=0',r.stdout)
                 self.assertIn('timeout waiting for file cache to drop to 0GB',r.stderr)
 
+    def test_empty_be_list_cannot_qualify_as_cleared(self):
+        r=self.run_shell(self.suite_script('tpch','BE_HOSTS_ARR=(); clear_doris_file_cache'))
+        self.assertNotEqual(r.returncode,0)
+        self.assertIn('no BE hosts',r.stderr)
+        self.assertFalse(self.calls.exists())
+
+    def test_invalid_metric_values_cannot_qualify_as_zero(self):
+        for value in [-1, '-Inf', 'NaN', 'garbage']:
+            with self.subTest(value=value):
+                r=self.run_shell(self.suite_script('tpch'),CACHE_SIZES=json.dumps({'be-a':[value],'be-b':[0]}))
+                self.assertNotEqual(r.returncode,0)
+                self.assertIn('invalid file_cache_cache_size',r.stderr)
+
+    def test_numeric_zero_in_scientific_notation_is_accepted(self):
+        r=self.run_shell(self.suite_script('tpch'),CACHE_SIZES=json.dumps({'be-a':['0e+00'],'be-b':['0.00']}))
+        self.assertEqual(r.returncode,0,r.stderr)
+
     def test_generic_non_suite_tolerance_still_accepts_one_gb(self):
         r=self.run_shell('clear_file_cache_max_size_gb=2; clear_doris_file_cache',CACHE_SIZES=json.dumps({'be-a':[1073741824],'be-b':[0]}))
         self.assertEqual(r.returncode,0,r.stderr)

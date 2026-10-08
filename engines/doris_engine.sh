@@ -652,6 +652,10 @@ clear_doris_file_cache_on_be() {
 #   on every BE has file_cache_cache_size <= max_size_gb * 1GB; re-trigger clear on
 #   BEs still above threshold. Timeout after timeout_min minutes.
 clear_doris_file_cache() {
+    if [[ -z "${BE_HOSTS_ARR[*]:-}" ]]; then
+        echo "cannot verify file cache: no BE hosts" >&2
+        return 1
+    fi
     local brpc_port="${be_brpc_port:-8060}"
     local max_gb="${clear_file_cache_max_size_gb:-0}"
     local timeout_min="${clear_file_cache_timeout_min:-60}"
@@ -691,6 +695,10 @@ clear_doris_file_cache() {
             local size
             while IFS= read -r size; do
                 idx=$((idx+1))
+                if [[ ! "$size" =~ ^[+]?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$ ]]; then
+                    echo "[${be}] invalid file_cache_cache_size value on disk ${idx}" >&2
+                    return 1
+                fi
                 local gb
                 gb=$(awk -v s="$size" 'BEGIN{printf "%.2f", s/1024/1024/1024}')
                 echo "[${be}] disk ${idx} cache size: ${gb} GB"
