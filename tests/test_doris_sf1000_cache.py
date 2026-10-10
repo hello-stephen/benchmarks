@@ -40,7 +40,9 @@ import json,os,sys
 from urllib.parse import urlsplit
 url=sys.argv[-1];host=urlsplit(url).hostname
 with open(os.environ['CACHE_CALLS'],'a') as f:f.write(json.dumps({'host':host,'url':url})+'\n')
-if '/api/file_cache?' in url:
+if '/api/clear_cache/SegmentCache' in url:
+    print('ClearCacheAction cache:SegmentCache prune win, freed size 123')
+elif '/api/file_cache?' in url:
     if os.environ.get('CLEAR_FAIL')=='1':print('fixture HTTP 500',file=sys.stderr);sys.exit(22)
     print('{"status":"OK"}')
 else:
@@ -116,6 +118,10 @@ printf 'effective_threshold=%s\\n' "$clear_file_cache_max_size_gb"
         calls=[json.loads(x) for x in self.calls.read_text().splitlines()]
         self.assertEqual({x['host'] for x in calls if 'op=clear&sync=true' in x['url']},{'be-a','be-b'})
         self.assertEqual({x['host'] for x in calls if 'brpc_metrics' in x['url']},{'be-a','be-b'})
+        for host in ['be-a','be-b']:
+            urls=[x['url'] for x in calls if x['host']==host]
+            self.assertIn('/api/clear_cache/SegmentCache',urls[0])
+            self.assertIn('op=clear&sync=true',urls[1])
 
     def test_one_nonempty_be_fails_even_when_other_be_empty(self):
         r=self.run_shell(self.suite_script('ssb'),CACHE_SIZES=json.dumps({'be-a':[0,0],'be-b':[1]}))
